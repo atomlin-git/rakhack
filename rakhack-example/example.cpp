@@ -3,9 +3,9 @@
 
 #include "../../rakhack/headers/rakclass.hpp"
 
-bool RakClass::onSendPacket(unsigned char* data, unsigned int numberOfBitsToSend, unsigned int priority, unsigned int reliability, char orderingChannel, unsigned int binaryAddress, unsigned short port, bool broadcast, unsigned int connectMode)
+bool RakClass::onSendPacket(RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability, char orderingChannel, unsigned int binaryAddress, unsigned short port, bool broadcast, unsigned int connectMode)
 {
-    printf("\nsendPacket: %d id\n", data[0]);
+    printf("\nsendPacket: %d id\n", bitStream->GetData()[0]);
 
     return true;
 }

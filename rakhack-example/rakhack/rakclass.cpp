@@ -3,11 +3,10 @@
 static std::uintptr_t OffsetNakedReceive[] = { 0x4FF91, 0x53341, 0xFF, 0xFF };
 static std::uintptr_t OffsetPacketReceive[][3] = { { 0x311A1, 0x3CDA0, 0x372F0 }, { 0x34551, 0x40150, 0x3A6A0 }, { 0xFF, 0xFF, 0xFF }, { 0xFF, 0xFF, 0xFF } };
 
-static std::uintptr_t OffsetSendPacket[] = { 0x388E0, 0x3BC90, 0xFF, 0xFF };
-static std::uintptr_t OffsetSendRPC[] = { 0x3A560, 0x3E570, 0xFF, 0xFF };
+static std::uintptr_t OffsetSendPacket[] = { 0x387D0, 0x3BB80, 0xFF, 0xFF };
 
 static std::uintptr_t OffsetOnSendNaked[][2]  = { {0x4FFC0, 0x50046}, {0x53370, 0x533F6}, {0xFF, 0xFF}, {0xFF, 0xFF} };
-static std::uintptr_t OffsetOnSendPacket[][2] = { {0x37490, 0x3751A}, {0x3A840, 0x3A8CA}, {0xFF, 0xFF}, {0xFF, 0xFF} };
+static std::uintptr_t OffsetOnSendPacket[][2] = { {0x388E0, 0x389D4}, {0x3BC90, 0x389D4}, {0xFF, 0xFF}, {0xFF, 0xFF} };
 
 using NakedPacketReceive = void(__stdcall*)(unsigned int, unsigned short, unsigned char*, unsigned int, void*);
 NakedPacketReceive m_NakedPacket = nullptr;
@@ -24,17 +23,17 @@ static unsigned int sampVersion;
 static void* RakPeer;
 static PlayerID player;
 
-void __stdcall HookProcessNetworkPacket(unsigned int binaryAddress, unsigned short serverPort, unsigned char* data, unsigned int length, void* this_)
+void __stdcall HookProcessNetworkPacket(unsigned int binaryAddress, unsigned short serverPort, unsigned char* data, unsigned int length, void* rakPeer)
 {
     player.binaryAddress = binaryAddress;
     player.port = serverPort;
 
-    RakPeer = this_;
+    RakPeer = rakPeer;
 
     if (!RakClass::onReceiveSystemPacket(binaryAddress, serverPort, data, length))
         return;
 
-    return m_NakedPacket(binaryAddress, serverPort, (unsigned char*)data, length, this_);
+    return m_NakedPacket(binaryAddress, serverPort, (unsigned char*)data, length, rakPeer);
 }
 
 using receive_ignore_t = Packet*(__thiscall*)(void*);
@@ -103,41 +102,35 @@ void __declspec(naked) HookSocketSend(void)
 
 void __declspec(naked) HookPacketSend(void)
 {
-    static unsigned char* date = nullptr;
-    static unsigned int len = 0;
+    static RakNet::BitStream* bitStream = nullptr;
     static unsigned int priority = 0;
     static unsigned int reliability = 0;
     static unsigned int orderingChannel = 0;
     static unsigned int binaryAddress = 0;
     static unsigned int port = 0;
     static unsigned int broadcast = 0;
-    static unsigned int connectMode = 0;
 
     __asm {
         mov eax, [esp + 0x04]
-        mov date, eax
+        mov bitStream, eax
         mov eax, [esp + 0x08]
-        mov len, eax
-        mov eax, [esp + 0x0C]
         mov priority, eax
-        mov eax, [esp + 0x10]
+        mov eax, [esp + 0x0C]
         mov reliability, eax
-        mov eax, [esp + 0x14]
+        mov eax, [esp + 0x10]
         mov orderingChannel, eax
-        mov eax, [esp + 0x18]
+        mov eax, [esp + 0x14]
         mov binaryAddress, eax
-        mov eax, [esp + 0x1C]
+        mov eax, [esp + 0x18]
         mov port, eax
-        mov eax, [esp + 0x20]
+        mov eax, [esp + 0x1C]
         mov broadcast, eax
-        mov eax, [esp + 0x24]
-        mov connectMode, eax
         pushad
     }
 
     static unsigned int m_SendPacketExit = (SampBase + OffsetOnSendPacket[sampVersion][1]);
 
-    if(RakClass::onSendPacket(date, len, priority, reliability, (char)orderingChannel, binaryAddress, port, broadcast, connectMode))
+    if(RakClass::onSendPacket(bitStream, priority, reliability, (char)orderingChannel, binaryAddress, port, broadcast, 0))
     {
         __asm {
             popad
@@ -172,19 +165,23 @@ void RakClass::SetupHooks()
     m_SendPacket = RakClass::SetJmpHook(SampBase + OffsetOnSendPacket[sampVersion][0], 9, &HookPacketSend);
 }
 
-using packet_send_t = int(__thiscall*)(void*, RakNet::BitStream*, unsigned int, unsigned int, char, PlayerID, bool);
-using rpc_send_t = bool(__thiscall*)(void*, int*, char*, unsigned int, unsigned int, unsigned int, char, PlayerID, bool, bool, NetworkID, RakNet::BitStream*);
+using packet_send_t = bool(__thiscall*)(void*, unsigned char*, unsigned int, unsigned int, unsigned int, char, PlayerID, bool);
 
 void RakClass::SendPacket(RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability, char orderingChannel)
 {
     packet_send_t packetSend = nullptr;
     packetSend = std::bit_cast<packet_send_t>((SampBase + OffsetSendPacket[sampVersion]));
-    packetSend(RakPeer, bitStream, priority, reliability, orderingChannel, player, false);
+    packetSend(RakPeer, bitStream->GetData(), bitStream->GetNumberOfBytesUsed(), priority, reliability, orderingChannel, player, false);
 }
 
 void RakClass::SendRPC(int* rpcID, RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability)
 {
-    rpc_send_t rpcSend = nullptr;
-    rpcSend = std::bit_cast<rpc_send_t>((SampBase + OffsetSendRPC[sampVersion]));
-    rpcSend(RakPeer, rpcID, std::bit_cast<char*>(bitStream->GetData()), bitStream->GetNumberOfBitsUsed(), priority, reliability, 0, player, false, false, UNASSIGNED_NETWORK_ID, NULL);
+    RakNet::BitStream rpcBitStream;
+
+    rpcBitStream.Write((unsigned char)20);
+    rpcBitStream.Write((unsigned char)(*rpcID));
+    rpcBitStream.WriteCompressed((unsigned int)bitStream->GetNumberOfBitsUsed());
+    rpcBitStream.WriteBits((const unsigned char*)bitStream->GetData(), bitStream->GetNumberOfBitsUsed(), false);
+
+    RakClass::SendPacket(&rpcBitStream, priority, reliability, 0);
 }

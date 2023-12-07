@@ -45,7 +45,7 @@ class RakClass
 	public:
 		static void SetupHooks();
 
-		static bool onSendPacket(unsigned char* data, unsigned int numberOfBitsToSend, unsigned int priority, unsigned int reliability, char orderingChannel, unsigned int binaryAddress, unsigned short port, bool broadcast, unsigned int connectMode);
+		static bool onSendPacket(RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability, char orderingChannel, unsigned int binaryAddress, unsigned short port, bool broadcast, unsigned int connectMode);
 		static bool onSendSystemPacket(unsigned int socket, unsigned char* data, unsigned int length, unsigned int binaryAddress, unsigned short port);
 
 		static bool onReceiveSystemPacket(unsigned int binaryAddress, unsigned short port, unsigned char* data, unsigned int length);
