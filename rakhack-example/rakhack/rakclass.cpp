@@ -174,14 +174,27 @@ void RakClass::SendPacket(RakNet::BitStream* bitStream, unsigned int priority, u
     packetSend(RakPeer, bitStream->GetData(), bitStream->GetNumberOfBytesUsed(), priority, reliability, orderingChannel, player, false);
 }
 
-void RakClass::SendRPC(int* rpcID, RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability)
+void RakClass::SendRPC(int rpcID, RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability)
 {
     RakNet::BitStream rpcBitStream;
 
     rpcBitStream.Write((unsigned char)20);
-    rpcBitStream.Write((unsigned char)(*rpcID));
+    rpcBitStream.Write((unsigned char)rpcID);
     rpcBitStream.WriteCompressed((unsigned int)bitStream->GetNumberOfBitsUsed());
     rpcBitStream.WriteBits((const unsigned char*)bitStream->GetData(), bitStream->GetNumberOfBitsUsed(), false);
 
     RakClass::SendPacket(&rpcBitStream, priority, reliability, 0);
+}
+
+void RakClass::EmulateRPC(int rpcID, RakNet::BitStream* bitStream)
+{
+    RakNet::BitStream rpcBitStream;
+
+    rpcBitStream.Write((unsigned char)20);
+    rpcBitStream.Write((unsigned char)rpcID);
+    rpcBitStream.WriteCompressed((unsigned int)bitStream->GetNumberOfBitsUsed());
+    rpcBitStream.WriteBits((const unsigned char*)bitStream->GetData(), bitStream->GetNumberOfBitsUsed(), false);
+
+    HandleRPCPacket = std::bit_cast<handle_rpc_t>((SampBase + OffsetPacketReceive[sampVersion][2]));
+    HandleRPCPacket(RakPeer, (char*)rpcBitStream.GetData(), rpcBitStream.GetNumberOfBytesUsed(), player);
 }
