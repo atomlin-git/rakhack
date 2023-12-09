@@ -52,7 +52,9 @@ class RakClass
 		static bool onReceivePacket(unsigned char* data, unsigned int length);
 
 		static void SendPacket(RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability, char orderingChannel);
-		static void SendRPC(int*, RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability);
+		static void SendRPC(int rpcID, RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability);
+
+        static void EmulateRPC(int rpcID, RakNet::BitStream* bitStream);
 
 	private:
         static void* SetCallHook(uintptr_t HookAddress, void* DetourFunction)
