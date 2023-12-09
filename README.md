@@ -11,7 +11,8 @@
 ```
 - Установить, и инициализировать хуки -> SetupHooks()
 - Отправка пакета (SendPacket(RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability, char orderingChannel))
-- Отправка RPC (SendRPC(int* id, RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability))
+- Отправка RPC (SendRPC(int id, RakNet::BitStream* bitStream, unsigned int priority, unsigned int reliability))
+- Эмулировать получение RPC (EmulateRPC(int rpcID, RakNet::BitStream* bitStream))
 ```
 <hr>
 
@@ -26,7 +27,7 @@
 
 ###### TODO:
 ```
-- Добавить возможность эмуляции получения пакета/rpc
+- Добавить возможность эмуляции получения пакета
 - Выполнить небольшой рефакторинг
 - Добавить поддержку R4 и DL-R1
 ```
