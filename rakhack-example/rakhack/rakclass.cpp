@@ -6,7 +6,7 @@ static std::uintptr_t OffsetPacketReceive[][3] = { { 0x311A1, 0x3CDA0, 0x372F0 }
 static std::uintptr_t OffsetSendPacket[] = { 0x387D0, 0x3BB80, 0xFF, 0xFF };
 
 static std::uintptr_t OffsetOnSendNaked[][2]  = { {0x4FFC0, 0x50046}, {0x53370, 0x533F6}, {0xFF, 0xFF}, {0xFF, 0xFF} };
-static std::uintptr_t OffsetOnSendPacket[][2] = { {0x388E0, 0x389D4}, {0x3BC90, 0x389D4}, {0xFF, 0xFF}, {0xFF, 0xFF} };
+static std::uintptr_t OffsetOnSendPacket[][2] = { {0x388E0, 0x389D4}, {0x3BC90, 0x3BD84}, {0xFF, 0xFF}, {0xFF, 0xFF} };
 
 using NakedPacketReceive = void(__stdcall*)(unsigned int, unsigned short, unsigned char*, unsigned int, void*);
 NakedPacketReceive m_NakedPacket = nullptr;
