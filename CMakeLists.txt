@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8...3.15)
 project(rakhack VERSION 0.1.0 LANGUAGES C CXX)
 
+add_subdirectory(source)
 add_library(${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME} PRIVATE
