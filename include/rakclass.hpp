@@ -18,7 +18,8 @@ struct Packet
 {
 	unsigned short playerIndex;
 
-	PlayerID playerId;
+	unsigned int binaryAddress;
+    unsigned short port;
 
 	unsigned int length;
 	unsigned int bitSize;
@@ -27,18 +28,10 @@ struct Packet
 
 	bool deleteData;
 };
-
-struct NetworkID
-{
-	static bool peerToPeerMode;
-
-	PlayerID playerId;
-
-	unsigned short localSystemId;
-};
-
-const NetworkID UNASSIGNED_NETWORK_ID = { 0xFFFFFFFF, 0xFFFF, 65535 };
 #pragma pack(pop)
+
+using naked_receive_t = void(__stdcall*)(unsigned int, unsigned short, unsigned char*, unsigned int, void*);
+using packet_receive_t = Packet*(__fastcall*)(void*, void*);
 
 class RakClass
 {
@@ -92,4 +85,7 @@ class RakClass
 
             return nullptr;
         }
+
+    protected:
+        using packet_send_t = bool(__thiscall*)(void*, unsigned char*, unsigned int, unsigned int, unsigned int, char, unsigned int, unsigned short, bool);
 };
