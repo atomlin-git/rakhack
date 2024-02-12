@@ -95,7 +95,6 @@ void BitStream::WriteBool(const bool input)
 			data[numberOfBitsUsed >> 3] |= 0x80 >> (numberOfBitsMod8);
 	}
 	else {
-
 		if ((numberOfBitsUsed % 8) == 0) data[numberOfBitsUsed >> 3] = 0;
 	}
 
