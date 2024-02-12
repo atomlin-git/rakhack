@@ -128,8 +128,6 @@ void __declspec(naked) HookPacketSend(void)
         __asm jmp tr_send_packet
         else
         __asm jmp tr_return_packet
-
-    __asm popad
 }
 
 void RakClass::SetupHooks()
