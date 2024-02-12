@@ -26,7 +26,6 @@ void __stdcall HookProcessNetworkPacket(unsigned int binaryAddress, unsigned sho
 {
     binaryAddress = binaryAddress;
     port = serverPort;
-
     RakPeer = rakPeer;
 
     if (!RakClass::onReceiveSystemPacket(binaryAddress, serverPort, data, length)) return;
@@ -39,20 +38,18 @@ receive_ignore_t ReceiveIgnoreRPC = nullptr;
 using handle_rpc_t = bool(__thiscall*)(void*, char*, unsigned int, unsigned int, unsigned short);
 handle_rpc_t HandleRPCPacket = nullptr;
 
-Packet* __fastcall HookReceivePacket(void* EDX, void* rakPeer)
+Packet* __fastcall HookReceivePacket(void* rakPeer)
 {
     ReceiveIgnoreRPC = std::bit_cast<receive_ignore_t>((SampBase + OffsetPacketReceive[sampVersion][1]));
     HandleRPCPacket = std::bit_cast<handle_rpc_t>((SampBase + OffsetPacketReceive[sampVersion][2]));
 
-    Packet* packet = ReceiveIgnoreRPC(EDX);
+    Packet* packet = ReceiveIgnoreRPC(rakPeer);
 
     if (packet)
     {
-        if (!RakClass::onReceivePacket(packet->data, packet->length))
-            return NULL;
-
+        if (!RakClass::onReceivePacket(packet->data, packet->length)) return NULL;
         if (packet->data[0] == 20)
-            HandleRPCPacket(EDX, (char*)packet->data, packet->length, packet->binaryAddress, packet->port);
+            HandleRPCPacket(rakPeer, (char*)packet->data, packet->length, packet->binaryAddress, packet->port);
     }
 
     return packet;
@@ -83,12 +80,9 @@ void __declspec(naked) HookSocketSend(void)
 
     static unsigned int tr_return_naked = (SampBase + OffsetOnSendNaked[sampVersion][1]);
 
-    __asm popad
-
     if (RakClass::onSendSystemPacket(socket, date, len, binaryAddress, port))
-        __asm jmp tr_send_naked_packet
-        else 
-        __asm jmp tr_return_naked
+        __asm popad __asm jmp tr_send_naked_packet
+        else __asm popad __asm jmp tr_return_naked
 }
 
 void __declspec(naked) HookPacketSend(void)
@@ -122,12 +116,9 @@ void __declspec(naked) HookPacketSend(void)
 
     static unsigned int tr_return_packet = (SampBase + OffsetOnSendPacket[sampVersion][1]);
 
-    __asm popad
-
     if(RakClass::onSendPacket(bitStream, priority, reliability, (char)orderingChannel, binaryAddress, port, broadcast, 0))
-        __asm jmp tr_send_packet
-        else
-        __asm jmp tr_return_packet
+        __asm popad __asm jmp tr_send_packet
+        else __asm popad __asm jmp tr_return_packet
 }
 
 void RakClass::SetupHooks()
