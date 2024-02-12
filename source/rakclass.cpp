@@ -83,12 +83,12 @@ void __declspec(naked) HookSocketSend(void)
 
     static unsigned int tr_return_naked = (SampBase + OffsetOnSendNaked[sampVersion][1]);
 
+    __asm popad
+
     if (RakClass::onSendSystemPacket(socket, date, len, binaryAddress, port))
         __asm jmp tr_send_naked_packet
         else 
         __asm jmp tr_return_naked
-
-    __asm popad
 }
 
 void __declspec(naked) HookPacketSend(void)
@@ -121,6 +121,8 @@ void __declspec(naked) HookPacketSend(void)
     }
 
     static unsigned int tr_return_packet = (SampBase + OffsetOnSendPacket[sampVersion][1]);
+
+    __asm popad
 
     if(RakClass::onSendPacket(bitStream, priority, reliability, (char)orderingChannel, binaryAddress, port, broadcast, 0))
         __asm jmp tr_send_packet
